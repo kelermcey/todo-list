@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智慧提醒待辦事項清單</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Noto+Serif+TC:wght@500;600&family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F3EC;
+    --surface:#FFFFFF;
+    --surface-soft:#FBF9F4;
+    --ink:#2E2B26;
+    --ink-soft:#6B665C;
+    --line:#E4DFD2;
+    --sage:#7C9885;
+    --sage-deep:#5E7B68;
+    --wood:#C79A62;
+    --ember:#C2694B;
+    --shadow: 0 1px 2px rgba(46,43,38,0.04), 0 8px 24px -12px rgba(46,43,38,0.12);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(124,152,133,0.10), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Inter','Noto Sans TC',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ===== 頂部固定學生資訊條 ===== */
+  .id-bar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    background:var(--ink);
+    color:#F1ECE0;
+    font-family:'Noto Sans TC',sans-serif;
+    font-size:13px;
+    letter-spacing:0.04em;
+    padding:9px 18px;
+    text-align:center;
+    border-bottom:1px solid #1d1b17;
+  }
+  .id-bar b{ color:var(--wood); font-weight:600; }
+  .id-bar .sep{ color:#5c574c; margin:0 10px; }
+
+  /* ===== 版面容器 ===== */
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:48px 20px 80px;
+  }
+
+  header.page-head{
+    margin-bottom:36px;
+  }
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--sage-deep);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:18px;height:1px;
+    background:var(--sage-deep);
+    display:inline-block;
+  }
+  h1{
+    font-family:'Fraunces','Noto Serif TC',serif;
+    font-weight:600;
+    font-size:32px;
+    margin:0 0 8px;
+    letter-spacing:0.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:14px;
+    line-height:1.6;
+    margin:0;
+  }
+
+  /* 通知狀態小標籤 */
+  #permStatus{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:14px;
+    font-size:12.5px;
+    padding:6px 12px;
+    border-radius:100px;
+    border:1px solid var(--line);
+    background:var(--surface-soft);
+    color:var(--ink-soft);
+  }
+  #permStatus .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:#c9c2af;
+  }
+  #permStatus.ok .dot{ background:var(--sage); }
+  #permStatus.bad .dot{ background:var(--ember); }
+
+  /* ===== 新增任務卡片 ===== */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+  }
+  .add-card{
+    padding:24px;
+    margin-bottom:32px;
+  }
+  .field-row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .field{
+    flex:1 1 220px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field label{
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    letter-spacing:0.04em;
+  }
+  input[type=text], input[type=datetime-local]{
+    font-family:'Inter','Noto Sans TC',sans-serif;
+    font-size:14.5px;
+    color:var(--ink);
+    background:var(--surface-soft);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:11px 13px;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  input[type=text]::placeholder{ color:#A9A294; }
+  input[type=text]:focus, input[type=datetime-local]:focus{
+    border-color:var(--sage);
+    background:#fff;
+    box-shadow:0 0 0 3px rgba(124,152,133,0.18);
+  }
+
+  .add-btn-row{
+    margin-top:16px;
+    display:flex;
+    justify-content:flex-end;
+  }
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+  }
+  .btn-primary{
+    background:var(--sage-deep);
+    color:#F6F3EC;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    padding:11px 24px;
+    border-radius:9px;
+    box-shadow:0 4px 14px -4px rgba(94,123,104,0.55);
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .btn-primary:hover{ background:#4f6a58; transform:translateY(-1px); }
+  .btn-primary:active{ transform:translateY(0); }
+
+  /* ===== 清單區 ===== */
+  .list-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .list-head h2{
+    font-family:'Fraunces','Noto Serif TC',serif;
+    font-size:18px;
+    font-weight:600;
+    margin:0;
+  }
+  .list-head span{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+
+  #emptyState{
+    border:1px dashed var(--line);
+    border-radius:14px;
+    padding:36px 20px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    background:var(--surface-soft);
+  }
+
+  ul#todoList{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .todo-item{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:13px;
+    padding:14px 16px;
+    display:grid;
+    grid-template-columns:34px 1fr auto;
+    align-items:center;
+    gap:14px;
+    box-shadow:0 1px 2px rgba(46,43,38,0.03);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .todo-item.due{
+    border-color:var(--ember);
+    background:#FFF6F2;
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  .todo-item.done{ opacity:0.5; }
+  .todo-item.removing{ opacity:0; transform:translateX(8px); }
+
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(194,105,75,0.0); }
+    50%{ box-shadow:0 0 0 6px rgba(194,105,75,0.10); }
+  }
+
+  /* 蠟燭式倒數圖示 — 簽名元素 */
+  .candle{
+    position:relative;
+    width:18px;
+    height:30px;
+    margin:0 auto;
+  }
+  .candle .body{
+    position:absolute;
+    bottom:0; left:50%;
+    transform:translateX(-50%);
+    width:12px;
+    height:24px;
+    background:linear-gradient(#FBF6EC, #EFE6D3);
+    border:1px solid #DCD0B8;
+    border-radius:2px 2px 1px 1px;
+    overflow:hidden;
+  }
+  .candle .wax{
+    position:absolute;
+    bottom:0; left:0; right:0;
+    background:var(--wood);
+    opacity:0.55;
+    transition:height 1s linear;
+  }
+  .candle .flame{
+    position:absolute;
+    top:-9px; left:50%;
+    transform:translateX(-50%);
+    width:7px; height:11px;
+    background:radial-gradient(circle at 50% 70%, #FFE9A8, var(--ember) 80%);
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    opacity:0;
+    transition:opacity .3s ease;
+  }
+  .todo-item.due .candle .flame,
+  .todo-item.done .candle .flame{ opacity:0; }
+  .todo-item:not(.done):not(.due) .candle .flame{ opacity:1; animation:flicker 1.6s ease-in-out infinite; }
+  @keyframes flicker{
+    0%,100%{ transform:translateX(-50%) scale(1); }
+    50%{ transform:translateX(-48%) scale(0.9) rotate(-2deg); }
+  }
+
+  .todo-text{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    min-width:0;
+  }
+  .todo-name{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--ink);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .todo-item.done .todo-name{ text-decoration:line-through; }
+  .todo-meta{
+    font-size:12px;
+    color:var(--ink-soft);
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .todo-meta .badge-due{
+    color:var(--ember);
+    font-weight:600;
+  }
+
+  .todo-actions{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .icon-btn{
+    width:32px;height:32px;
+    border-radius:8px;
+    background:transparent;
+    color:var(--ink-soft);
+    font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease, color .15s ease;
+  }
+  .icon-btn:hover{ background:var(--surface-soft); color:var(--ink); }
+  .icon-btn.del:hover{ background:#FBE9E2; color:var(--ember); }
+  .icon-btn.chk.checked{ color:var(--sage-deep); }
+
+  footer.note{
+    margin-top:40px;
+    font-size:11.5px;
+    color:#A9A294;
+    text-align:center;
+    line-height:1.7;
+  }
+
+  @media (max-width:480px){
+    h1{ font-size:26px; }
+    .todo-item{ grid-template-columns:28px 1fr auto; padding:12px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="id-bar">
+    班級：<b>會計一A</b><span class="sep">|</span>學號：<b>414600774</b><span class="sep">|</span>姓名：<b>黃咸甄</b>
+  </div>
+
+  <div class="wrap">
+    <header class="page-head">
+      <div class="eyebrow">提醒清單</div>
+      <h1>智慧提醒待辦事項清單</h1>
+      <p class="sub">設定任務與提醒時間，時間一到，瀏覽器會主動推播通知並發出提示音 — 就像桌上一盞慢慢燃盡的蠟燭，提醒你別忘了它。</p>
+      <div id="permStatus"><span class="dot"></span><span id="permText">正在請求通知權限…</span></div>
+    </header>
+
+    <section class="card add-card">
+      <div class="field-row">
+        <div class="field">
+          <label for="taskName">任務名稱</label>
+          <input type="text" id="taskName" placeholder="例如：繳交會計學作業" maxlength="60">
+        </div>
+        <div class="field">
+          <label for="taskTime">提醒時間</label>
+          <input type="datetime-local" id="taskTime">
+        </div>
+      </div>
+      <div class="add-btn-row">
+        <button class="btn-primary" id="addBtn">＋ 新增提醒</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="list-head">
+        <h2>待辦清單</h2>
+        <span id="countText">共 0 筆</span>
+      </div>
+      <div id="emptyState">目前沒有待辦事項，新增一筆開始追蹤吧。</div>
+      <ul id="todoList"></ul>
+    </section>
+
+    <footer class="note">提醒功能依賴瀏覽器通知權限與分頁存活狀態，請保留此分頁開啟以確保準時提醒。</footer>
+  </div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'smart_todo_list_v1';
+  let todos = load();
+
+  const nameInput = document.getElementById('taskName');
+  const timeInput = document.getElementById('taskTime');
+  const addBtn = document.getElementById('addBtn');
+  const listEl = document.getElementById('todoList');
+  const emptyState = document.getElementById('emptyState');
+  const countText = document.getElementById('countText');
+  const permStatus = document.getElementById('permStatus');
+  const permText = document.getElementById('permText');
+
+  // ---- 預設提醒時間：5 分鐘後 ----
+  function defaultDateTimeLocal(offsetMin){
+    const d = new Date(Date.now() + offsetMin*60000);
+    d.setSeconds(0,0);
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  timeInput.value = defaultDateTimeLocal(5);
+
+  // ---- 通知權限 ----
+  function refreshPermUI(){
+    if(!('Notification' in window)){
+      permStatus.className = 'bad';
+      permText.textContent = '此瀏覽器不支援桌面通知';
+      return;
+    }
+    if(Notification.permission === 'granted'){
+      permStatus.className = 'ok';
+      permText.textContent = '已啟用桌面通知';
+    } else if (Notification.permission === 'denied'){
+      permStatus.className = 'bad';
+      permText.textContent = '通知權限已被拒絕，請於瀏覽器設定中開啟';
+    } else {
+      permStatus.className = '';
+      permText.textContent = '尚未授權通知，請允許以啟用提醒';
+    }
+  }
+  if('Notification' in window){
+    if(Notification.permission === 'default'){
+      Notification.requestPermission().then(refreshPermUI);
+    }
+  }
+  refreshPermUI();
+
+  // ---- 嗶聲（Web Audio API，免外部音檔） ----
+  let audioCtx = null;
+  function beep(){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      for(let i=0;i<2;i++){
+        const t0 = audioCtx.currentTime + i*0.28;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.22, t0+0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0+0.22);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(t0);
+        osc.stop(t0+0.25);
+      }
+    }catch(e){ /* 部分瀏覽器需互動後才能播放音效 */ }
+  }
+  // 第一次使用者點擊頁面時解鎖 AudioContext（瀏覽器自動播放政策）
+  document.addEventListener('click', function unlock(){
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    document.removeEventListener('click', unlock);
+  }, {once:true});
+
+  // ---- 儲存 / 讀取 ----
+  function load(){
+    try{
+      const raw = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
+      return Array.isArray(raw) ? raw : [];
+    }catch(e){ return []; }
+  }
+  function save(){
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+  }
+
+  // ---- 新增任務 ----
+  function addTodo(){
+    const name = nameInput.value.trim();
+    const time = timeInput.value;
+    if(!name){ nameInput.focus(); nameInput.style.borderColor = 'var(--ember)'; setTimeout(()=>nameInput.style.borderColor='',900); return; }
+    if(!time){ timeInput.focus(); timeInput.style.borderColor = 'var(--ember)'; setTimeout(()=>timeInput.style.borderColor='',900); return; }
+
+    todos.push({
+      id: Date.now() + Math.random().toString(16).slice(2),
+      name,
+      remindAt: new Date(time).getTime(),
+      createdAt: Date.now(),
+      done: false,
+      notified: false
+    });
+    save();
+    render();
+    nameInput.value = '';
+    timeInput.value = defaultDateTimeLocal(5);
+    nameInput.focus();
+  }
+  addBtn.addEventListener('click', addTodo);
+  nameInput.addEventListener('keydown', e => { if(e.key === 'Enter') addTodo(); });
+  timeInput.addEventListener('keydown', e => { if(e.key === 'Enter') addTodo(); });
+
+  function fmtTime(ts){
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function remainText(ts){
+    const diff = ts - Date.now();
+    if(diff <= 0) return '時間已到';
+    const mins = Math.round(diff/60000);
+    if(mins < 1) return '不到 1 分鐘';
+    if(mins < 60) return `還有 ${mins} 分鐘`;
+    const hrs = Math.floor(mins/60);
+    const remMin = mins % 60;
+    if(hrs < 24) return `還有 ${hrs} 小時${remMin? remMin+' 分':''}`;
+    const days = Math.floor(hrs/24);
+    return `還有 ${days} 天`;
+  }
+
+  function render(){
+    todos.sort((a,b)=> a.remindAt - b.remindAt);
+    listEl.innerHTML = '';
+    countText.textContent = `共 ${todos.length} 筆`;
+    emptyState.style.display = todos.length ? 'none' : 'block';
+
+    todos.forEach(t => {
+      const li = document.createElement('li');
+      li.className = 'todo-item' + (t.done ? ' done' : '') + (!t.done && t.remindAt <= Date.now() ? ' due' : '');
+      li.dataset.id = t.id;
+
+      const total = Math.max(t.remindAt - t.createdAt, 1000);
+      const elapsed = Math.min(Math.max(Date.now() - t.createdAt, 0), total);
+      const waxHeightPct = t.done ? 0 : Math.max(0, 100 - (elapsed/total*100));
+
+      li.innerHTML = `
+        <div class="candle">
+          <div class="body"><div class="wax" style="height:${waxHeightPct}%"></div></div>
+          <div class="flame"></div>
+        </div>
+        <div class="todo-text">
+          <div class="todo-name">${escapeHtml(t.name)}</div>
+          <div class="todo-meta">
+            <span>⏰ ${fmtTime(t.remindAt)}</span>
+            <span class="${(!t.done && t.remindAt<=Date.now()) ? 'badge-due':''}">${t.done ? '已完成' : remainText(t.remindAt)}</span>
+          </div>
+        </div>
+        <div class="todo-actions">
+          <button class="icon-btn chk${t.done?' checked':''}" title="標記完成">${t.done ? '✓' : '○'}</button>
+          <button class="icon-btn del" title="刪除">✕</button>
+        </div>
+      `;
+
+      li.querySelector('.chk').addEventListener('click', () => {
+        t.done = !t.done;
+        save();
+        render();
+      });
+      li.querySelector('.del').addEventListener('click', () => {
+        li.classList.add('removing');
+        setTimeout(()=>{
+          todos = todos.filter(x => x.id !== t.id);
+          save();
+          render();
+        }, 220);
+      });
+
+      listEl.appendChild(li);
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---- 每秒檢查提醒 ----
+  setInterval(() => {
+    const now = Date.now();
+    let changed = false;
+    todos.forEach(t => {
+      if(!t.done && !t.notified && t.remindAt <= now){
+        t.notified = true;
+        changed = true;
+        triggerReminder(t);
+      }
+    });
+    if(changed) save();
+    render(); // 持續更新倒數文字與蠟燭燃燒進度
+  }, 1000);
+
+  function triggerReminder(t){
+    beep();
+    if('Notification' in window && Notification.permission === 'granted'){
+      try{
+        const n = new Notification('提醒事項到期了 ⏰', {
+          body: t.name,
+          tag: t.id,
+          requireInteraction: true
+        });
+        n.onclick = () => { window.focus(); n.close(); };
+      }catch(e){ /* 忽略建立失敗 */ }
+    } else {
+      // 沒有通知權限時，至少在頁面標題上提示
+      const original = document.title;
+      let blink = 0;
+      const timer = setInterval(()=>{
+        document.title = (blink++ % 2 === 0) ? `🔔 ${t.name}` : original;
+        if(blink > 6){ clearInterval(timer); document.title = original; }
+      }, 600);
+    }
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
